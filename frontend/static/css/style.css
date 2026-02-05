@@ -342,3 +342,112 @@ tr:hover {
     background: rgba(245, 158, 11, 0.1);
     color: var(--warning);
 }
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    width: 500px;
+    max-width: 90%;
+    background: #1e293b;
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    animation: slideUp 0.3s ease-out;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.btn-close {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
+/* Night Watch Tactical Overrides */
+body.night-watch {
+    --bg: #000000;
+    --card-bg: #0a0a0a;
+    --sidebar-bg: #050505;
+    --primary: #f59e0b;
+    /* Tactical Amber */
+    --border: #333333;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+}
+
+body.night-watch .card {
+    border: 1px solid #444444;
+    box-shadow: none;
+}
+
+body.night-watch .sidebar {
+    border-right: 1px solid #222222;
+}
+
+body.night-watch .btn-primary {
+    background: #f59e0b;
+    color: #000;
+}
+
+body.night-watch #map,
+body.night-watch #full-map,
+body.night-watch #prediction-map {
+    filter: invert(100%) hue-rotate(180deg) brightness(80%) contrast(120%);
+}
+
+body.night-watch .safety-predictor {
+    border-color: #f59e0b !important;
+}
