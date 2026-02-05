@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Crime Pattern Analysis Dashboard</title>
+
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <!-- Main Style -->
+    <link rel="stylesheet" href="/static/css/style.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="dark-mode">
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">🛡️</span>
+                <h1>CrimeAI</h1>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="active" id="nav-dashboard"><span class="icon">📊</span> Dashboard</a>
+                <a href="#" id="nav-map"><span class="icon">🗺️</span> Map View</a>
+                <a href="#" id="nav-trends"><span class="icon">📈</span> Trends</a>
+                <a href="#" id="nav-predictions"><span class="icon">🔮</span> Predictions</a>
+                <a href="#" id="nav-reports"><span class="icon">📄</span> Reports</a>
+                <a href="#" id="nav-admin"><span class="icon">⚙️</span> Administrator</a>
+            </nav>
+            <div class="user-profile" id="sidebar-user-profile">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User">
+                <div class="user-info">
+                    <span class="name" id="display-username">Analyst Root</span>
+                    <span class="role">Administrator</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="search-bar">
+                    <input type="text" id="global-search" placeholder="Search by area, crime type...">
+                </div>
+                <div class="actions">
+                    <button class="btn btn-primary">Generate Report</button>
+                    <button class="btn btn-icon" title="Logout" id="logout-btn">🚪</button>
+                </div>
+            </header>
+
+            <!-- Dashboard Section -->
+            <div id="section-dashboard" class="content-section active">
+                <!-- Add Crime Form (Doc Requirement) -->
+                <div class="card full-width" style="margin-bottom: 2rem;">
+                    <h3>Add New Crime Record</h3>
+                    <form id="crime-entry-form" class="crime-form-grid">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Crime Type</label>
+                                <select id="entry-type" class="form-input">
+                                    <option value="THEFT">Theft</option>
+                                    <option value="ROBBERY">Robbery</option>
+                                    <option value="BURGLARY">Burglary</option>
+                                    <option value="CYBER CRIME">Cyber Crime</option>
+                                    <option value="ASSAULT">Assault</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Date & Time</label>
+                                <input type="datetime-local" id="entry-date" class="form-input" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Location Area</label>
+                                <input type="text" id="entry-location-text" placeholder="e.g. Rohini Sector 7, Delhi"
+                                    class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Coordinates (Lat, Lng)</label>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="number" step="any" id="entry-lat" placeholder="Latitude"
+                                        class="form-input" required>
+                                    <input type="number" step="any" id="entry-lng" placeholder="Longitude"
+                                        class="form-input" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Detailed Description</label>
+                            <textarea id="entry-desc" placeholder="Enter incident details..." rows="3"
+                                class="form-input"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Submit Crime
+                            Report</button>
+                    </form>
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <span class="stat-label">Total Officers</span>
+                        <h2 class="stat-value" id="total-officers">42</h2>
+                        <span class="stat-trend trend-up">↑ 3 new today</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Crime Records</span>
+                        <h2 class="stat-value" id="crime-records-count">1,248</h2>
+                        <span class="stat-trend trend-down">↓ 5% this week</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Open Cases</span>
+                        <h2 class="stat-value" id="open-cases-count">187</h2>
+                        <span class="stat-trend" style="color: var(--warning)">Currently investigating</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Hotspots Identified</span>
+                        <h2 class="stat-value" id="hotspots-count">14</h2>
+                        <span class="stat-trend trend-up">↑ High-risk areas</span>
+                    </div>
+                </div>
+
+                <div class="viz-row">
+                    <div class="map-container card">
+                        <h3>Crime Hotspot Map (India)</h3>
+                        <div id="map"></div>
+                    </div>
+                    <div class="chart-container card">
+                        <h3>Crime Distribution</h3>
+                        <canvas id="typeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Section -->
+            <div id="section-map" class="content-section">
+                <div class="card full-width">
+                    <h3>Full Geographic Analysis</h3>
+                    <div id="full-map" style="height: 600px; border-radius: 1rem;"></div>
+                </div>
+            </div>
+
+            <!-- Trends Section -->
+            <div id="section-trends" class="content-section">
+                <div class="card full-width">
+                    <h3>Historical Crime Trends</h3>
+                    <div style="height: 500px">
+                        <canvas id="trendChartFull"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Predictions Section -->
+            <div id="section-predictions" class="content-section">
+                <div class="prediction-grid">
+                    <div class="card">
+                        <h3>AI Predictive Analytics</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 2rem;">The map below highlights areas
+                            with the highest probability of future incidents based on historical patterns and temporal
+                            clustering.</p>
+                        <div id="prediction-map" style="height: 500px; border-radius: 1rem;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Section (The Records Table) -->
+            <div id="section-reports" class="content-section">
+                <div class="card full-width">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h3>Police Crime Records</h3>
+                        <div class="filter-group">
+                            <select id="crime-filter"
+                                style="padding: 0.5rem; background: #0f172a; border-radius: 0.4rem; color: white;">
+                                <option value="ALL">All Crimes</option>
+                                <option value="THEFT">Theft</option>
+                                <option value="BURGLARY">Burglary</option>
+                                <option value="ROBBERY">Robbery</option>
+                                <option value="ASSAULT">Assault</option>
+                                <option value="CYBER CRIME">Cyber Crime</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="records-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Date</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Arrest</th>
+                                </tr>
+                            </thead>
+                            <tbody id="records-body">
+                                <!-- Data populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Section -->
+            <div id="section-admin" class="content-section">
+                <div class="card">
+                    <h3>System Administration</h3>
+                    <p style="color: var(--text-secondary);">Welcome back, <span id="admin-name-span">Analyst
+                            Root</span>. You have full system access.</p>
+                    <div style="margin-top: 2rem;">
+                        <button class="btn btn-primary">Manage Users</button>
+                        <button class="btn btn-icon" style="width: auto; padding: 0 1rem;">DB Settings</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Main JS -->
+    <script src="/static/js/main.js"></script>
+</body>
+
+</html>
