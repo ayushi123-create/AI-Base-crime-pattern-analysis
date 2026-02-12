@@ -84,6 +84,13 @@
             <p>Enter your credentials to access the analysis dashboard.</p>
             <form id="login-form">
                 <div class="form-group">
+                    <label>Select Role</label>
+                    <select id="role" class="form-input" style="width: 100%; padding: 0.8rem 1rem; background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; color: white; outline: none;">
+                        <option value="admin">Admin</option>
+                        <option value="police">Police Station</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>Officer ID / Username</label>
                     <input type="text" id="username" placeholder="e.g. officer_123" required>
                 </div>
@@ -105,12 +112,21 @@
     <script>
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const role = document.getElementById('role').value;
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            // For project demonstration: any password "admin" works
-            if (password === 'admin' || password === '1234') {
+            let valid = false;
+
+            if (role === 'admin' && password === 'admin') {
+                valid = true;
+            } else if (role === 'police' && password === '1234') {
+                valid = true;
+            }
+
+            if (valid) {
                 localStorage.setItem('crime_ai_user', username);
+                localStorage.setItem('crime_ai_role', role);
                 window.location.href = '/';
             } else {
                 document.getElementById('login-error').style.display = 'block';

@@ -21,6 +21,7 @@ function checkAuth() {
 
 function logout() {
     localStorage.removeItem('crime_ai_user');
+    localStorage.removeItem('crime_ai_role');
     window.location.href = '/login';
 }
 
@@ -58,15 +59,32 @@ function initNavigation() {
 
     // Handle profile click
     document.getElementById('sidebar-user-profile').addEventListener('click', () => {
-        document.getElementById('nav-admin').click();
+        const storedRole = localStorage.getItem('crime_ai_role');
+        if (storedRole === 'admin') {
+            document.getElementById('nav-admin').click();
+        }
     });
 
-    // Update display name
+    // Update display name and role
     const storedUser = localStorage.getItem('crime_ai_user');
+    const storedRole = localStorage.getItem('crime_ai_role');
+
     if (storedUser) {
         document.getElementById('display-username').innerText = storedUser;
         if (document.getElementById('admin-name-span')) {
             document.getElementById('admin-name-span').innerText = storedUser;
+        }
+
+        // Update Role Display
+        const roleDisplay = document.querySelector('.user-info .role');
+        if (roleDisplay) {
+            roleDisplay.innerText = storedRole === 'admin' ? 'Administrator' : 'Police Officer';
+        }
+
+        // Hide Admin Link if not admin
+        if (storedRole !== 'admin') {
+            const adminLink = document.getElementById('nav-admin');
+            if (adminLink) adminLink.style.display = 'none';
         }
     }
 }
