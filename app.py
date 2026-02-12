@@ -28,6 +28,47 @@ def login_page():
 def register_page():
     return render_template('register.html')
 
+@app.route('/api/auth/register', methods=['POST'])
+def api_register():
+    data = request.json
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        cursor = connection.cursor()
+        
+        # Check if username or email already exists
+        cursor.execute("SELECT id FROM users WHERE username = ? OR email = ?", 
+                      (data.get('username'), data.get('email')))
+        if cursor.fetchone():
+            return jsonify({"status": "error", "message": "Username or email already exists"}), 400
+        
+        # Insert new user (storing plain password for demo - in production use hashing!)
+        query = """
+        INSERT INTO users (username, password_hash, email, role, created_at)
+        VALUES (?, ?, ?, ?, datetime('now'))
+        """
+        role = data.get('role', 'police').upper()
+        if role == 'POLICE':
+            role = 'VIEWER'  # Map police to VIEWER role
+        elif role == 'ADMIN':
+            role = 'ADMIN'
+        
+        cursor.execute(query, (
+            data.get('username'),
+            data.get('password'),  # In production, hash this!
+            data.get('email'),
+            role
+        ))
+        connection.commit()
+        
+        return jsonify({"status": "success", "message": "Registration successful"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        connection.close()
+
 @app.route('/api/auth/login', methods=['POST'])
 def api_login():
     data = request.json

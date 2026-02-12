@@ -81,10 +81,14 @@ function initNavigation() {
             roleDisplay.innerText = storedRole === 'admin' ? 'Administrator' : 'Police Officer';
         }
 
-        // Hide Admin Link if not admin
-        if (storedRole !== 'admin') {
-            const adminLink = document.getElementById('nav-admin');
-            if (adminLink) adminLink.style.display = 'none';
+        // Show/Hide Admin Link based on role
+        const adminLink = document.getElementById('nav-admin');
+        if (adminLink) {
+            if (storedRole === 'admin') {
+                adminLink.style.display = 'flex'; // Show for admin
+            } else {
+                adminLink.style.display = 'none'; // Hide for police
+            }
         }
     }
 }

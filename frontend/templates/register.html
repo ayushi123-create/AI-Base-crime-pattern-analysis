@@ -132,14 +132,50 @@
             }
         }
 
-        document.getElementById('register-form').addEventListener('submit', (e) => {
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+
             const role = document.getElementById('reg-role').value;
             const fullname = document.getElementById('fullname').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm').value;
+            const officerId = document.getElementById('officer-id').value;
 
-            // Mock registration logic
-            alert(`Registration request for ${fullname} (${role.toUpperCase()}) sent to System Administrator for approval!`);
-            window.location.href = '/login';
+            // Validate password match
+            if (password !== confirm) {
+                alert('Passwords do not match!');
+                return;
+            }
+
+            // Prepare registration data
+            const registrationData = {
+                username: officerId,
+                email: email,
+                password: password,
+                role: role,
+                fullname: fullname
+            };
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(registrationData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`Registration successful for ${fullname} (${role.toUpperCase()})!\n\nYou can now login with your Officer ID and password.`);
+                    window.location.href = '/login';
+                } else {
+                    alert(`Registration failed: ${result.message || result.error}`);
+                }
+            } catch (error) {
+                alert('Registration failed. Please try again.');
+                console.error('Registration error:', error);
+            }
         });
 
         // Init
