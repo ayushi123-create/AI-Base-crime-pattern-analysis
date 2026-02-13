@@ -4,134 +4,404 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - CrimeAI India</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Outfit:wght@700&display=swap"
+    <title>Login - AI Crime Pattern Analysis</title>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@500;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        .login-container {
+        :root {
+            --bg-dark: #0f172a;
+            --panel-left: #1e293b;
+            --panel-right: #ffffff;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --input-bg: #020617;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+            color: var(--text-main);
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            overflow: hidden;
         }
 
-        .login-card {
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(10px);
-            padding: 3rem;
-            border-radius: 1.5rem;
-            border: 1px solid #334155;
+        /* Main Container */
+        .container {
             width: 100%;
-            max-width: 400px;
-            text-align: center;
+            max-width: 1200px;
+            height: 85vh;
+            display: flex;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
         }
 
-        .login-card h2 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 2rem;
-            margin-bottom: 1rem;
+        /* Left Panel */
+        .left-panel {
+            flex: 1;
+            padding: 4rem;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8)),
+                url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
         }
 
-        .login-card p {
-            color: #94a3b8;
+        .brand {
             margin-bottom: 2rem;
         }
 
+        .brand h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            max-width: 90%;
+            margin-bottom: 3rem;
+        }
+
+        .features {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1rem;
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .feature-item:hover {
+            transform: translateX(10px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), #60a5fa);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Right Panel */
+        .right-panel {
+            flex: 1;
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            background: rgba(15, 23, 42, 0.6);
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+
+        .login-header {
+            margin-bottom: 2.5rem;
+            text-align: center;
+        }
+
+        .login-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            color: var(--text-muted);
+        }
+
         .form-group {
-            text-align: left;
             margin-bottom: 1.5rem;
         }
 
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-            color: #94a3b8;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
         }
 
-        .form-group input {
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .form-control {
             width: 100%;
-            padding: 0.8rem 1rem;
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 0.5rem;
+            padding: 1rem 1rem 1rem 3rem;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
             color: white;
-            outline: none;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.3s;
         }
 
-        .form-group input:focus {
-            border-color: #3b82f6;
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.2rem;
         }
 
         .btn-login {
             width: 100%;
             padding: 1rem;
+            background: linear-gradient(135deg, var(--primary), #2563eb);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
             margin-top: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.4);
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .register-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+                height: 100vh;
+                border-radius: 0;
+                overflow-y: auto;
+            }
+
+            .left-panel {
+                padding: 3rem 2rem;
+                min-height: 40vh;
+            }
+
+            .brand h1 {
+                font-size: 2.5rem;
+            }
+
+            .right-panel {
+                padding: 3rem 2rem;
+            }
         }
     </style>
 </head>
 
-<body class="dark-mode">
-    <div class="login-container">
-        <div class="login-card">
-            <div class="logo" style="justify-content: center; margin-bottom: 1.5rem;">
-                <span class="logo-icon">🛡️</span>
-                <h1 style="font-size: 1.5rem;">CrimeAI India</h1>
+<body>
+
+    <div class="container">
+        <!-- Left Panel: Info & Branding -->
+        <div class="left-panel">
+            <div class="brand">
+                <h1>AI-Powered <br>Crime Pattern Analysis</h1>
+                <p>Revolutionize law enforcement with our advanced AI system. Detect patterns, identify hotspots, and
+                    prevent criminal activities before they happen.</p>
             </div>
-            <h2>Police Portal</h2>
-            <p>Enter your credentials to access the analysis dashboard.</p>
-            <form id="login-form">
-                <div class="form-group">
-                    <label>Select Role</label>
-                    <select id="role" class="form-input" style="width: 100%; padding: 0.8rem 1rem; background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; color: white; outline: none;">
-                        <option value="admin">Admin</option>
-                        <option value="police">Police Station</option>
-                    </select>
+
+            <div class="features">
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <span>AI-Powered Recognition & Analysis</span>
                 </div>
-                <div class="form-group">
-                    <label>Officer ID / Username</label>
-                    <input type="text" id="username" placeholder="e.g. officer_123" required>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-map-location-dot"></i>
+                    </div>
+                    <span>Real-time Crime Hotspot Detection</span>
                 </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="password" placeholder="••••••••" required>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-halved"></i>
+                    </div>
+                    <span>Secure Role-Based Access Control</span>
                 </div>
-                <button type="submit" class="btn btn-primary btn-login">Login Access</button>
-            </form>
-            <div id="login-error" style="color: #ef4444; margin-top: 1rem; font-size: 0.875rem; display: none;">
-                Invalid credentials. Please try again.
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <span>Advanced Data Analytics & Reporting</span>
+                </div>
             </div>
-            <div style="margin-top: 1.5rem; font-size: 0.875rem; color: #94a3b8;">
-                Don't have an account? <a href="/register" style="color: #3b82f6; text-decoration: none;">Register
-                    Now</a>
+        </div>
+
+        <!-- Right Panel: Login Form -->
+        <div class="right-panel">
+            <div class="login-box">
+                <div class="login-header">
+                    <h2>Secure Login</h2>
+                    <p>Enter credentials to access the dashboard</p>
+                </div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="role">Select Role</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user-tag"></i>
+                            <select id="role" class="form-control">
+                                <option value="admin">Administrator</option>
+                                <option value="police">Police Station Officer</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="username">Username / Badge ID</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-id-badge"></i>
+                            <input type="text" id="username" class="form-control" placeholder="Enter your ID" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-login">
+                        Access System <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
+                    </button>
+
+                    <div class="register-link">
+                        Don't have an account? <a href="/register">Register Now</a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+
     <script>
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        function handleLogin(event) {
+            event.preventDefault();
+
             const role = document.getElementById('role').value;
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            let valid = false;
-
-            if (role === 'admin' && password === 'admin') {
-                valid = true;
-            } else if (role === 'police' && password === '1234') {
-                valid = true;
+            if (!username || !password) {
+                alert('Please fill in all fields');
+                return;
             }
 
-            if (valid) {
+            const btn = document.querySelector('.btn-login');
+            const originalText = btn.innerHTML;
+
+            // Simulate loading
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+            btn.style.opacity = '0.7';
+
+            setTimeout(() => {
+                // Simple validation mock
+                if (password.length < 3) {
+                    alert('Invalid credentials');
+                    btn.innerHTML = originalText;
+                    btn.style.opacity = '1';
+                    return;
+                }
+
+                // Store auth and redirect
                 localStorage.setItem('crime_ai_user', username);
                 localStorage.setItem('crime_ai_role', role);
-                window.location.href = '/';
-            } else {
-                document.getElementById('login-error').style.display = 'block';
-            }
-        });
+                localStorage.setItem('crime_ai_auth', 'true');
+
+                // Redirect to Dashboard via Flask route
+                window.location.href = '/dashboard';
+
+            }, 1500);
+        }
     </script>
 </body>
 
