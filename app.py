@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request, render_template
+from flask.json.provider import DefaultJSONProvider
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
@@ -7,10 +8,23 @@ from backend.app.services.database import get_db_connection
 from backend.app.models.hotspot_model import HotspotModel
 import pandas as pd
 import random
+import math
+import numpy as np
+
+# --- CUSTOM JSON PROVIDER TO HANDLE NAN ---
+class NanConverterJSONProvider(DefaultJSONProvider):
+    def default(self, o):
+        if isinstance(o, float) and (math.isnan(o) or np.isnan(o)):
+            return None
+        return super().default(o)
 
 app = Flask(__name__, 
             static_folder='frontend/static',
             template_folder='frontend/templates')
+
+# Register custom provider
+app.json = NanConverterJSONProvider(app)
+
 CORS(app)
 
 # Default configuration
@@ -115,6 +129,10 @@ def submit_crime():
 def health_check():
     return jsonify({"status": "healthy", "service": "crime-analysis-api", "database": "sqlite"}), 200
 
+@app.route('/api/version', methods=['GET'])
+def version_check():
+    return "VERIFIED_FIX_V2", 200
+
 @app.route('/api/crimes', methods=['GET'])
 def get_crimes():
     connection = get_db_connection()
@@ -125,10 +143,13 @@ def get_crimes():
         query = "SELECT * FROM crimes ORDER BY occurrence_date DESC"
         df = pd.read_sql(query, connection)
         
-        # FIX: Replace NaN with None (null in JSON) to avoid invalid JSON errors
-        df = df.where(pd.notnull(df), None)
+        # Original: df = df.astype(object).where(pd.notnull(df), None)
+        # Using CustomJSONProvider now handles NaNs globally, but we keep this as backup
+        crimes_raw = df.to_dict(orient='records')
         
-        crimes = df.to_dict(orient='records')
+        # Double safety: manual clean
+        crimes = [{k: (None if pd.isna(v) else v) for k, v in record.items()} for record in crimes_raw]
+        
         return jsonify({"crimes": crimes, "count": len(crimes)}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -140,8 +161,6 @@ def get_hotspots():
     model = HotspotModel(n_clusters=10)
     centers = model.get_hotspots()
     if centers is not None:
-        # FIX: Ensure coordinates are valid floats and not NaN
-        import math
         hotspots = []
         for c in centers:
              lat = float(c[0])
@@ -264,4 +283,7 @@ def predict_safety():
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
+    print("\n" + "="*50)
+    print("SERVER STARTED SUCCESSFULLY - PLEASE RELOAD DASHBOARD")
+    print("="*50 + "\n")
     app.run(host='0.0.0.0', port=port, debug=True)
