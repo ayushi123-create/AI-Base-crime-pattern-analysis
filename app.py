@@ -94,14 +94,14 @@ def submit_crime():
         cursor = connection.cursor()
         query = """
         INSERT INTO crimes 
-        (crime_id, crime_type, description, occurrence_date, latitude, longitude, location_description, arrested, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (crime_id, crime_type, description, occurrence_date, latitude, longitude, location_description, arrested)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """
         crime_id = f"C{random.randint(200000, 999999)}"
         values = (
             crime_id, data['type'], data['description'], 
             data['date'], data['lat'], data['lng'],
-            data['location'], 0, 'Open'
+            data['location'], 0
         )
         cursor.execute(query, values)
         connection.commit()
@@ -122,8 +122,12 @@ def get_crimes():
         return jsonify({"error": "Database connection failed"}), 500
     
     try:
-        query = "SELECT * FROM crimes LIMIT 100"
+        query = "SELECT * FROM crimes ORDER BY occurrence_date DESC"
         df = pd.read_sql(query, connection)
+        
+        # FIX: Replace NaN with None (null in JSON) to avoid invalid JSON errors
+        df = df.where(pd.notnull(df), None)
+        
         crimes = df.to_dict(orient='records')
         return jsonify({"crimes": crimes, "count": len(crimes)}), 200
     except Exception as e:
@@ -136,7 +140,14 @@ def get_hotspots():
     model = HotspotModel(n_clusters=10)
     centers = model.get_hotspots()
     if centers is not None:
-        hotspots = [{"lat": float(c[0]), "lng": float(c[1])} for c in centers]
+        # FIX: Ensure coordinates are valid floats and not NaN
+        import math
+        hotspots = []
+        for c in centers:
+             lat = float(c[0])
+             lng = float(c[1])
+             if not (math.isnan(lat) or math.isnan(lng)):
+                 hotspots.append({"lat": lat, "lng": lng})
         return jsonify({"hotspots": hotspots}), 200
     return jsonify({"error": "Could not generate hotspots"}), 500
 

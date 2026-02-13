@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - CrimePattern AI</title>
+    <title>Dashboard - CrimeAI</title>
     <!-- Fonts -->
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@500;700&display=swap"
@@ -16,14 +16,161 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        /* Extra dashboard specific adjustments */
-        .leaflet-popup-content-wrapper {
-            background: #1e293b;
-            color: #fff;
+        /* Specific overrides for this dashboard layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            grid-template-areas:
+                "stat1 stat2 stat3"
+                "hotspot map dist"
+                "feed feed feed";
         }
 
-        .leaflet-popup-tip {
-            background: #1e293b;
+        .stat-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 140px;
+        }
+
+        .stat-card:nth-child(1) {
+            grid-area: stat1;
+        }
+
+        .stat-card:nth-child(2) {
+            grid-area: stat2;
+        }
+
+        .stat-card:nth-child(3) {
+            grid-area: stat3;
+        }
+
+        .card-hotspot {
+            grid-area: hotspot;
+        }
+
+        .card-map {
+            grid-area: map;
+            grid-column: span 1;
+        }
+
+        /* Adjusted to fit grid */
+        .card-dist {
+            grid-area: dist;
+        }
+
+        .card-feed {
+            grid-area: feed;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .stat-trend {
+            font-size: 0.85rem;
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .trend-up {
+            color: var(--success);
+        }
+
+        .trend-down {
+            color: var(--danger);
+        }
+
+        .trend-warn {
+            color: var(--warning);
+        }
+
+        /* Map & Viz Area */
+        .viz-row {
+            display: contents;
+            /* Let grid handle it */
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: 100%;
+        }
+
+        #map {
+            height: 300px;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        /* Live Feed */
+        .live-feed-container {
+            background-color: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .feed-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .feed-badge {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .feed-content {
+            background-color: rgba(31, 41, 55, 0.5);
+            border-left: 4px solid var(--warning);
+            padding: 1rem;
+            border-radius: 4px;
+            color: #60a5fa;
+            font-family: monospace;
+        }
+
+        /* Adjusting grid for middle row items to span correctly if needed */
+        .card-map {
+            grid-column: span 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr 1fr;
+                grid-template-areas:
+                    "stat1 stat2"
+                    "stat3 hotspot"
+                    "map map"
+                    "dist dist"
+                    "feed feed";
+            }
         }
     </style>
 </head>
@@ -34,35 +181,37 @@
         <aside class="sidebar">
             <div class="logo">
                 <div class="logo-icon"><i class="fas fa-shield-alt" style="color: var(--primary);"></i></div>
-                <h1>CrimePattern AI</h1>
+                <h1>CrimeAI</h1>
             </div>
 
             <nav class="nav-menu">
-                <a href="#" class="active" onclick="showSection('dashboard', this)">
-                    <i class="fas fa-th-large"></i> Dashboard
+                <a href="#" class="active" id="nav-dashboard">
+                    <i class="fas fa-chart-line"></i> Dashboard
                 </a>
-                <a href="#" onclick="showSection('map-view', this)">
-                    <i class="fas fa-map-marked-alt"></i> Crime Map
+                <a href="#" id="nav-map">
+                    <i class="fas fa-map"></i> Map View
                 </a>
-                <a href="#" onclick="showSection('analytics', this)">
-                    <i class="fas fa-chart-bar"></i> Analytics
+                <a href="#" id="nav-trends">
+                    <i class="fas fa-chart-area"></i> Trends
                 </a>
-                <a href="#" onclick="showSection('reports', this)">
-                    <i class="fas fa-file-alt"></i> Reports
+                <a href="#" id="nav-predictions">
+                    <i class="fas fa-crystal-ball"></i> Predictions
                 </a>
-                <a href="#" id="admin-link" style="display:none;" onclick="showSection('admin', this)">
-                    <i class="fas fa-users-cog"></i> Admin
+                <a href="#" id="nav-reports">
+                    <i class="fas fa-file-contract"></i> Reports
+                </a>
+                <a href="#" id="nav-admin" style="display: none;">
+                    <i class="fas fa-cog"></i> Administrator
                 </a>
             </nav>
 
-            <div class="user-profile">
-                <img src="https://ui-avatars.com/api/?name=Officer&background=3b82f6&color=fff" alt="User"
-                    id="user-avatar">
+            <div class="user-profile" id="sidebar-user-profile" style="cursor: pointer;">
+                <img src="" alt="User" id="user-avatar">
                 <div class="user-info">
                     <span class="name" id="user-name">Loading...</span>
-                    <span class="role" id="user-role">Officer</span>
+                    <span class="role" id="user-role">...</span>
                 </div>
-                <a href="#" onclick="logout()" style="margin-left: auto; color: var(--text-secondary);">
+                <a href="#" id="logout-btn" style="margin-left: auto; color: var(--text-secondary);" title="Logout">
                     <i class="fas fa-sign-out-alt"></i>
                 </a>
             </div>
@@ -70,307 +219,217 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Top Bar -->
-            <div class="top-bar">
-                <div class="search-bar">
-                    <input type="text" placeholder="Search case numbers, locations...">
-                </div>
-                <div class="actions">
-                    <button class="btn btn-icon" onclick="toggleNightWatch()" title="Toggle Night Watch Mode">
-                        <i class="fas fa-moon"></i>
-                    </button>
-                    <button class="btn btn-icon">
-                        <i class="fas fa-bell"></i>
-                    </button>
-                    <button class="btn btn-primary" onclick="showReportModal()">
-                        <i class="fas fa-plus"></i> New Report
-                    </button>
-                </div>
-            </div>
-
             <!-- Dashboard View -->
-            <div id="dashboard" class="content-section active">
-                <div class="dashboard-grid">
-                    <!-- Stats Row -->
-                    <div class="stats-row">
-                        <div class="stat-card">
-                            <div class="stat-label">Total Crimes (24h)</div>
-                            <div class="stat-value" id="stats-total">--</div>
-                            <div class="stat-trend trend-down">
-                                <i class="fas fa-arrow-down"></i> 12% vs yesterday
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Active Hotspots</div>
-                            <div class="stat-value" id="stats-hotspots">--</div>
-                            <div class="stat-trend trend-up">
-                                <i class="fas fa-arrow-up"></i> 3 new detected
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Clearance Rate</div>
-                            <div class="stat-value">67%</div>
-                            <div class="stat-trend trend-up">
-                                <i class="fas fa-arrow-up"></i> 5% vs last week
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Viz Row -->
-                    <div class="viz-row">
-                        <div class="card">
-                            <h3>Real-time Crime Map</h3>
-                            <div id="map"></div>
-                        </div>
-                        <div class="card">
-                            <h3>Live Safety Predictor</h3>
-                            <div class="crime-form-grid">
-                                <input type="text" id="safety-area" class="form-input"
-                                    placeholder="Enter Area (e.g. Rohini)">
-                                <button class="btn btn-primary" onclick="checkSafety()">Check Safety Score</button>
-                                <div id="safety-result" style="margin-top: 15px; display: none;">
-                                    <h4 id="safety-label" style="margin-bottom: 5px;">Safe</h4>
-                                    <div class="stat-value" id="safety-score" style="font-size: 1.5rem;">9.2</div>
-                                    <p id="safety-summary"
-                                        style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 5px;">
-                                        Analysis based on recent news.</p>
+            <div id="section-dashboard" class="content-section active">
+                <!-- Crime Entry Form -->
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3>Add New Crime Record</h3>
+                    <form id="crime-entry-form">
+                        <div class="crime-form-grid">
+                            <div class="form-row">
+                                <div>
+                                    <label style="color: #94a3b8; font-size: 0.9rem;">Crime Type</label>
+                                    <select id="entry-type" class="form-input" style="margin-top: 0.5rem;">
+                                        <option value="THEFT">Theft</option>
+                                        <option value="ROBBERY">Robbery</option>
+                                        <option value="BURGLARY">Burglary</option>
+                                        <option value="ASSAULT">Assault</option>
+                                        <option value="FRAUD">Fraud</option>
+                                        <option value="CYBER CRIME">Cyber Crime</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="color: #94a3b8; font-size: 0.9rem;">Date & Time</label>
+                                    <input type="datetime-local" id="entry-date" class="form-input"
+                                        style="margin-top: 0.5rem;" required>
                                 </div>
                             </div>
+
+                            <div class="form-row">
+                                <div>
+                                    <label style="color: #94a3b8; font-size: 0.9rem;">Location Area</label>
+                                    <input type="text" id="entry-location-text" class="form-input"
+                                        placeholder="e.g. Rohini Sector 7, Delhi" style="margin-top: 0.5rem;" required>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                    <div>
+                                        <label style="color: #94a3b8; font-size: 0.9rem;">Latitude</label>
+                                        <input type="number" step="any" id="entry-lat" class="form-input"
+                                            placeholder="Lat" style="margin-top: 0.5rem;" required>
+                                    </div>
+                                    <div>
+                                        <label style="color: #94a3b8; font-size: 0.9rem;">Longitude</label>
+                                        <input type="number" step="any" id="entry-lng" class="form-input"
+                                            placeholder="Lng" style="margin-top: 0.5rem;" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style="color: #94a3b8; font-size: 0.9rem;">Detailed Description</label>
+                                <textarea id="entry-desc" class="form-input" rows="3"
+                                    placeholder="Enter incident details..." style="margin-top: 0.5rem;"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Submit
+                                Crime Report</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="dashboard-grid">
+
+                    <!-- Top Stats -->
+                    <!-- Top Stats -->
+                    <div class="stat-card">
+                        <div class="stat-label">Total Officers</div>
+                        <div class="stat-value" id="total-officers">--</div>
+                        <div class="stat-trend trend-up">
+                            <i class="fas fa-arrow-up"></i> 3 new today
                         </div>
                     </div>
 
-                    <!-- Charts Row -->
-                    <div class="viz-row">
-                        <div class="card">
-                            <h3>Crime Trends</h3>
-                            <canvas id="trendChart"></canvas>
-                        </div>
-                        <div class="card">
-                            <h3>Crime Distribution</h3>
-                            <canvas id="typeChart"></canvas>
+                    <div class="stat-card">
+                        <div class="stat-label">Crime Records</div>
+                        <div class="stat-value" id="crime-records-count">--</div>
+                        <div class="stat-trend trend-down">
+                            <i class="fas fa-arrow-down"></i> 5% this week
                         </div>
                     </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Open Cases</div>
+                        <div class="stat-value" id="open-cases-count">--</div>
+                        <div class="stat-trend trend-warn">
+                            Currently investigating
+                        </div>
+                    </div>
+
+                    <!-- Middle Row: Hotspots, Map, Dist -->
+                    <div class="card card-hotspot">
+                        <h3>Hotspots Identified</h3>
+                        <div class="stat-value" id="hotspots-count">--</div>
+                        <div class="stat-trend trend-up">
+                            <i class="fas fa-arrow-up"></i> High-risk areas
+                        </div>
+                    </div>
+
+                    <div class="card card-map">
+                        <h3>Crime Hotspot Map (India)</h3>
+                        <div id="map"></div>
+                    </div>
+
+                    <div class="card card-dist">
+                        <h3>Crime Distribution</h3>
+                        <canvas id="typeChart"></canvas>
+                    </div>
+
+                    <!-- Bottom Feed -->
+                    <div class="card-feed live-feed-container">
+                        <div class="feed-header">
+                            <h3 style="margin:0; font-size:1rem; color:#fff;"><i class="fas fa-satellite-dish"></i> Live
+                                Official Incident Feed</h3>
+                            <span class="feed-badge">LIVE SYSTEM</span>
+                        </div>
+                        <div class="feed-content">
+                            <i class="fas fa-exclamation-triangle"
+                                style="color: var(--warning); margin-right: 8px;"></i>
+                            SYSTEM UPDATE: Historical trend shows 5% dip in burglary for New Delhi today.
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
-            <!-- Other sections (Placeholders) -->
-            <div id="map-view" class="content-section">
+            <!-- Other Views -->
+            <div id="section-map" class="content-section">
                 <h2>Full Map View</h2>
-                <p style="color: var(--text-secondary);">Advanced map filters coming soon.</p>
+                <div id="full-map" style="height: 600px; width: 100%; border-radius: 12px; margin-top: 1rem;"></div>
             </div>
 
-            <div id="analytics" class="content-section">
-                <h2>Analytics</h2>
-                <p style="color: var(--text-secondary);">Detailed statistical reports coming soon.</p>
+            <div id="section-trends" class="content-section">
+                <h2>Crime Trends Analysis</h2>
+                <div class="card" style="margin-top: 1rem; height: 400px;">
+                    <canvas id="mainTrendChart"></canvas>
+                </div>
             </div>
 
-            <div id="reports" class="content-section">
-                <div class="card">
-                    <h3>Recent Reports</h3>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Type</th>
-                                    <th>Location</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="crimes-table-body">
-                                <!-- Populated by JS -->
-                            </tbody>
-                        </table>
+            <div id="section-predictions" class="content-section">
+                <h2>AI Crime Predictions</h2>
+                <div class="card" style="margin-top: 1rem;">
+                    <p>Select an area to generate safety prediction.</p>
+                    <div class="crime-form-grid" style="max-width: 500px; margin-top: 1rem;">
+                        <input type="text" id="safety-area" class="form-input" placeholder="Enter Area (e.g. Rohini)">
+                        <button class="btn btn-primary" id="btn-check-safety">Check Safety Score</button>
+                    </div>
+                    <div id="safety-result"
+                        style="margin-top: 20px; display: none; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                        <h4 id="safety-label" style="font-size: 1.2rem;"></h4>
+                        <div id="safety-score" style="font-size: 2rem; font-weight: bold; margin: 10px 0;"></div>
+                        <p id="safety-summary"></p>
                     </div>
                 </div>
             </div>
+
+            <div id="section-reports" class="content-section">
+                <div class="card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3>Recent Reports</h3>
+                        <div class="filters">
+                            <select id="crime-filter"
+                                style="background: #0f172a; color: white; border: 1px solid #334155; padding: 0.5rem; border-radius: 6px;">
+                                <option value="ALL">All Crimes</option>
+                                <option value="THEFT">Theft</option>
+                                <option value="ROBBERY">Robbery</option>
+                                <option value="BURGLARY">Burglary</option>
+                                <option value="ASSAULT">Assault</option>
+                                <option value="FRAUD">Fraud</option>
+                                <option value="CYBER CRIME">Cyber Crime</option>
+                            </select>
+                            <button class="btn btn-primary" id="btn-export-csv"
+                                style="padding: 0.5rem 1rem; font-size: 0.8rem; margin-left: 1rem;">Export CSV</button>
+                        </div>
+                    </div>
+                    <table id="reports-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Arrest</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="section-admin" class="content-section">
+                <h2>Administration Panel</h2>
+                <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; margin-top: 1rem;">
+                    <div class="card">
+                        <h3>User Management</h3>
+                        <p>Manage officer accounts and permissions.</p>
+                        <button class="btn btn-primary" style="margin-top: 1rem;">Manage Users</button>
+                    </div>
+                    <div class="card">
+                        <h3>System Settings</h3>
+                        <p>Configure prediction models and data sources.</p>
+                        <button class="btn btn-primary" style="margin-top: 1rem;">Settings</button>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
     <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Auth Check
-        const user = localStorage.getItem('crime_ai_user');
-        const role = localStorage.getItem('crime_ai_role');
-        const isAuth = localStorage.getItem('crime_ai_auth');
-
-        if (!isAuth) {
-            window.location.href = '/login';
-            alert('Your session has expired. Please login again.');
-        } else {
-            document.getElementById('user-name').textContent = user || 'Officer';
-            document.getElementById('user-role').textContent = (role || 'User').toUpperCase();
-            document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${user}&background=3b82f6&color=fff`;
-
-            if (role === 'admin') {
-                document.getElementById('admin-link').style.display = 'flex';
-            }
-        }
-
-        function logout() {
-            localStorage.clear();
-            window.location.href = '/';
-        }
-
-        function showSection(id, btn) {
-            document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-
-            if (btn) {
-                document.querySelectorAll('.nav-menu a').forEach(el => el.classList.remove('active'));
-                btn.classList.add('active');
-            }
-        }
-
-        function toggleNightWatch() {
-            document.body.classList.toggle('night-watch');
-        }
-
-        // Map & Data Initialization
-        let map;
-
-        async function initDashboard() {
-            // Init Map (Center on a default location, e.g., Delhi)
-            map = L.map('map').setView([28.6139, 77.2090], 11);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy;OpenStreetMap, &copy;CartoDB'
-            }).addTo(map);
-
-            // Fetch Data
-            try {
-                // Crimes
-                const crimesRes = await fetch('/api/crimes');
-                const crimesData = await crimesRes.json();
-
-                if (crimesData.crimes) {
-                    document.getElementById('stats-total').textContent = crimesData.count;
-
-                    // Populate Table
-                    const tbody = document.getElementById('crimes-table-body');
-                    tbody.innerHTML = '';
-                    crimesData.crimes.forEach(crime => {
-                        // Add markers
-                        if (crime.latitude && crime.longitude) {
-                            L.circleMarker([crime.latitude, crime.longitude], {
-                                radius: 6,
-                                fillColor: '#ef4444',
-                                color: '#000',
-                                weight: 1,
-                                opacity: 1,
-                                fillOpacity: 0.8
-                            }).addTo(map).bindPopup(`<b>${crime.crime_type}</b><br>${crime.description}`);
-                        }
-
-                        // Add table row
-                        const row = `
-                            <tr>
-                                <td>${crime.crime_id || 'N/A'}</td>
-                                <td>${crime.crime_type}</td>
-                                <td>${crime.location_description || 'Unknown'}</td>
-                                <td>${crime.occurrence_date}</td>
-                                <td><span class="badge badge-warning">${crime.status}</span></td>
-                            </tr>
-                         `;
-                        tbody.innerHTML += row;
-                    });
-
-                    // Charts
-                    updateCharts(crimesData.crimes);
-                }
-
-                // Hotspots
-                const hotspotsRes = await fetch('/api/hotspots');
-                const hotspotsData = await hotspotsRes.json();
-
-                if (hotspotsData.hotspots) {
-                    document.getElementById('stats-hotspots').textContent = hotspotsData.hotspots.length;
-                    hotspotsData.hotspots.forEach(h => {
-                        L.circle([h.lat, h.lng], {
-                            color: '#f59e0b',
-                            fillColor: '#f59e0b',
-                            fillOpacity: 0.3,
-                            radius: 1000
-                        }).addTo(map);
-                    });
-                }
-
-            } catch (error) {
-                console.error("Error fetching dashboard data:", error);
-            }
-        }
-
-        function updateCharts(crimes) {
-            // Simple mock charts for now
-            const ctx1 = document.getElementById('trendChart').getContext('2d');
-            new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    datasets: [{
-                        label: 'Crime Incidents',
-                        data: [12, 19, 3, 5, 2, 3, 15],
-                        borderColor: '#3b82f6',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { grid: { color: '#334155' } },
-                        x: { grid: { color: '#334155' } }
-                    }
-                }
-            });
-
-            const ctx2 = document.getElementById('typeChart').getContext('2d');
-            new Chart(ctx2, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Theft', 'Assault', 'Burglary'],
-                    datasets: [{
-                        data: [55, 30, 15],
-                        backgroundColor: ['#3b82f6', '#ef4444', '#f59e0b'],
-                        borderWidth: 0
-                    }]
-                },
-                options: { responsive: true }
-            });
-        }
-
-        async function checkSafety() {
-            const area = document.getElementById('safety-area').value;
-            if (!area) return;
-
-            const btn = document.querySelector('button[onclick="checkSafety()"]');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
-
-            try {
-                const res = await fetch(`/api/predict/safety?area=${area}`);
-                const data = await res.json();
-
-                document.getElementById('safety-result').style.display = 'block';
-                document.getElementById('safety-score').textContent = data.score;
-                document.getElementById('safety-label').textContent = data.label;
-                document.getElementById('safety-summary').textContent = data.summary;
-
-                const scoreColor = data.score > 8 ? '#22c55e' : (data.score > 5 ? '#f59e0b' : '#ef4444');
-                document.getElementById('safety-score').style.color = scoreColor;
-                document.getElementById('safety-label').style.color = scoreColor;
-
-            } catch (e) {
-                alert('Analysis failed');
-            } finally {
-                btn.innerHTML = 'Check Safety Score';
-            }
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', initDashboard);
-    </script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=debug2"></script>
 </body>
 
 </html>

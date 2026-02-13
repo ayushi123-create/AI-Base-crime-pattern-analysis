@@ -8,9 +8,47 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Dashboard Data
     initDashboard();
 
+    // Initialize WOW Factors
+    initWOWFactors();
+
     // Handle Logout
-    document.getElementById('logout-btn').addEventListener('click', logout);
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) logoutBtn.addEventListener('click', logout);
+
+    // Initializations
+    initSafetyCheck();
 });
+
+function initSafetyCheck() {
+    const btn = document.getElementById('btn-check-safety');
+    if (!btn) return;
+
+    btn.addEventListener('click', async () => {
+        const area = document.getElementById('safety-area').value;
+        if (!area) return;
+
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+
+        try {
+            const res = await fetch(`/api/predict/safety?area=${area}`);
+            const data = await res.json();
+
+            document.getElementById('safety-result').style.display = 'block';
+            document.getElementById('safety-score').textContent = data.score;
+            document.getElementById('safety-label').textContent = data.label;
+            document.getElementById('safety-summary').textContent = data.summary;
+
+            const scoreColor = data.score > 8 ? '#22c55e' : (data.score > 5 ? '#f59e0b' : '#ef4444');
+            document.getElementById('safety-score').style.color = scoreColor;
+            document.getElementById('safety-label').style.color = scoreColor;
+
+        } catch (e) {
+            alert('Analysis failed');
+        } finally {
+            btn.innerHTML = 'Check Safety Score';
+        }
+    });
+}
 
 function checkAuth() {
     const user = localStorage.getItem('crime_ai_user');
@@ -50,8 +88,13 @@ function initNavigation() {
                     if (window.mainMap) window.mainMap.invalidateSize();
                 } else if (targetId === 'section-map') {
                     initFullMap();
+                } else if (targetId === 'section-trends') {
+                    setTimeout(initCharts, 100);
                 } else if (targetId === 'section-predictions') {
                     initPredictionMap();
+                } else if (targetId === 'section-reports') {
+                    fetchStats();
+                    if (window.allCrimes) renderRecordsTable(window.allCrimes);
                 }
             }
         });
@@ -70,9 +113,20 @@ function initNavigation() {
     const storedRole = localStorage.getItem('crime_ai_role');
 
     if (storedUser) {
-        document.getElementById('display-username').innerText = storedUser;
+        // Fix: Use 'user-name' to match dashboard.html
+        if (document.getElementById('user-name')) {
+            document.getElementById('user-name').innerText = storedUser;
+        }
+
+        // Also update Admin panel header if present
         if (document.getElementById('admin-name-span')) {
             document.getElementById('admin-name-span').innerText = storedUser;
+        }
+
+        // Set Avatar using UI Avatars
+        const avatar = document.getElementById('user-avatar');
+        if (avatar) {
+            avatar.src = `https://ui-avatars.com/api/?name=${storedUser}&background=3b82f6&color=fff`;
         }
 
         // Update Role Display
@@ -95,7 +149,6 @@ function initNavigation() {
 
 function initDashboard() {
     initMap();
-    initCharts();
     fetchStats();
     initCrimeSubmission();
 }
@@ -146,7 +199,7 @@ async function initMap() {
     }).addTo(map);
 
     try {
-        const response = await fetch('http://localhost:5000/api/hotspots');
+        const response = await fetch('/api/hotspots');
         const data = await response.json();
 
         if (data.hotspots) {
@@ -166,8 +219,17 @@ async function initMap() {
 
 function initCharts() {
     // Trend Chart for Trends Page
-    const ctxTrendFull = document.getElementById('trendChartFull').getContext('2d');
-    new Chart(ctxTrendFull, {
+    const canvas = document.getElementById('mainTrendChart');
+    if (!canvas) return;
+
+    const ctxTrendFull = canvas.getContext('2d');
+
+    // Destroy existing if re-initializing
+    if (window.trendChartInstance) {
+        window.trendChartInstance.destroy();
+    }
+
+    window.trendChartInstance = new Chart(ctxTrendFull, {
         type: 'line',
         data: {
             labels: ['2019', '2020', '2021', '2022', '2023', '2024'],
@@ -196,17 +258,23 @@ function initCharts() {
 
 async function fetchStats() {
     try {
-        const response = await fetch('http://localhost:5000/api/crimes');
+        const response = await fetch('/api/crimes');
+        if (!response.ok) throw new Error('API Error');
         const data = await response.json();
 
-        if (data.crimes) {
+        if (data && data.crimes) {
             window.allCrimes = data.crimes;
 
-            // Update Dashboard Stats to match PDF
-            document.getElementById('crime-records-count').innerText = data.count.toLocaleString();
-            document.getElementById('open-cases-count').innerText = data.crimes.filter(c => !c.arrested).length;
-            document.getElementById('total-officers').innerText = "42"; // Mocked as per doc
-            document.getElementById('hotspots-count').innerText = "14"; // Mocked as per doc
+            // Update Dashboard Stats
+            if (document.getElementById('crime-records-count'))
+                document.getElementById('crime-records-count').innerText = data.count.toLocaleString();
+            if (document.getElementById('open-cases-count'))
+                document.getElementById('open-cases-count').innerText = data.crimes.filter(c => !c.arrested).length;
+
+            if (document.getElementById('total-officers'))
+                document.getElementById('total-officers').innerText = "42";
+            if (document.getElementById('hotspots-count'))
+                document.getElementById('hotspots-count').innerText = "14";
 
             renderRecordsTable(data.crimes);
 
@@ -219,34 +287,60 @@ async function fetchStats() {
             updateTypeChart(Object.keys(types), Object.values(types));
 
             // Setup filter listener
-            document.getElementById('crime-filter').addEventListener('change', (e) => {
-                const filterValue = e.target.value;
-                const filtered = filterValue === 'ALL'
-                    ? window.allCrimes
-                    : window.allCrimes.filter(c => c.crime_type === filterValue);
-                renderRecordsTable(filtered);
-            });
+            const filterEl = document.getElementById('crime-filter');
+            if (filterEl) {
+                const newFilter = filterEl.cloneNode(true);
+                filterEl.parentNode.replaceChild(newFilter, filterEl);
+
+                newFilter.addEventListener('change', (e) => {
+                    const filterValue = e.target.value;
+                    const filtered = filterValue === 'ALL'
+                        ? window.allCrimes
+                        : window.allCrimes.filter(c => c.crime_type.trim().toUpperCase() === filterValue);
+                    renderRecordsTable(filtered);
+                });
+            }
+        } else {
+            console.warn('Empty data');
+            renderRecordsTable([]);
         }
     } catch (error) {
         console.error('Error fetching stats:', error);
+        alert('Error fetching data: ' + error.message);
+        renderRecordsTable([]);
     }
 }
 
 function renderRecordsTable(crimes) {
     const tbody = document.getElementById('records-body');
+    if (!tbody) return;
     tbody.innerHTML = '';
+
+    if (!crimes || crimes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: #94a3b8;">No records found.</td></tr>';
+        return;
+    }
+
     crimes.forEach(crime => {
-        const row = `
-            <tr>
-                <td>${crime.crime_id}</td>
-                <td>${crime.crime_type}</td>
-                <td>${new Date(crime.occurrence_date).toLocaleDateString()}</td>
-                <td>${crime.latitude.toFixed(4)}, ${crime.longitude.toFixed(4)}</td>
-                <td><span class="badge badge-warning">Pending</span></td>
-                <td><span class="badge ${crime.arrested ? 'badge-success' : 'badge-danger'}">${crime.arrested ? 'Yes' : 'No'}</span></td>
-            </tr>
-        `;
-        tbody.insertAdjacentHTML('beforeend', row);
+        try {
+            let dateStr = 'Unknown';
+            if (crime.occurrence_date) {
+                const d = new Date(crime.occurrence_date);
+                dateStr = isNaN(d.getTime()) ? crime.occurrence_date : d.toLocaleDateString();
+            }
+
+            const row = `
+                <tr>
+                    <td>${crime.crime_id}</td>
+                    <td>${crime.crime_type}</td>
+                    <td>${dateStr}</td>
+                    <td>${(crime.latitude || 0).toFixed(4)}, ${(crime.longitude || 0).toFixed(4)}</td>
+                    <td><span class="badge badge-warning">Pending</span></td>
+                    <td><span class="badge ${crime.arrested ? 'badge-success' : 'badge-danger'}">${crime.arrested ? 'Yes' : 'No'}</span></td>
+                </tr>
+            `;
+            tbody.insertAdjacentHTML('beforeend', row);
+        } catch (e) { console.error('Row render error', e); }
     });
 }
 
@@ -264,7 +358,7 @@ function initFullMap() {
     }).addTo(map);
 
     // Fetch and show markers
-    fetch('http://localhost:5000/api/crimes')
+    fetch('/api/crimes')
         .then(res => res.json())
         .then(data => {
             if (data.crimes) {
@@ -302,7 +396,7 @@ function initPredictionMap() {
         attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
     }).addTo(map);
 
-    fetch('http://localhost:5000/api/hotspots')
+    fetch('/api/hotspots')
         .then(res => res.json())
         .then(data => {
             if (data.hotspots) {
