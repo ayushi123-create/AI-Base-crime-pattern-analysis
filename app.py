@@ -12,18 +12,21 @@ import math
 import numpy as np
 
 # --- CUSTOM JSON PROVIDER TO HANDLE NAN ---
-class NanConverterJSONProvider(DefaultJSONProvider):
-    def default(self, o):
-        if isinstance(o, float) and (math.isnan(o) or np.isnan(o)):
-            return None
-        return super().default(o)
+import simplejson
+
+class SimpleJsonProvider(DefaultJSONProvider):
+    def dumps(self, obj, **kwargs):
+        return simplejson.dumps(obj, **kwargs, ignore_nan=True)
+
+    def loads(self, s, **kwargs):
+        return simplejson.loads(s, **kwargs)
 
 app = Flask(__name__, 
             static_folder='frontend/static',
             template_folder='frontend/templates')
 
 # Register custom provider
-app.json = NanConverterJSONProvider(app)
+app.json = SimpleJsonProvider(app)
 
 CORS(app)
 
@@ -133,6 +136,17 @@ def health_check():
 def version_check():
     return "VERIFIED_FIX_V2", 200
 
+
+def clean_nans(data):
+    if isinstance(data, float):
+        if math.isnan(data) or np.isnan(data):
+            return None
+    elif isinstance(data, dict):
+        return {k: clean_nans(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [clean_nans(v) for v in data]
+    return data
+
 @app.route('/api/crimes', methods=['GET'])
 def get_crimes():
     connection = get_db_connection()
@@ -143,12 +157,11 @@ def get_crimes():
         query = "SELECT * FROM crimes ORDER BY occurrence_date DESC"
         df = pd.read_sql(query, connection)
         
-        # Original: df = df.astype(object).where(pd.notnull(df), None)
-        # Using CustomJSONProvider now handles NaNs globally, but we keep this as backup
+        # Convert to dict
         crimes_raw = df.to_dict(orient='records')
         
-        # Double safety: manual clean
-        crimes = [{k: (None if pd.isna(v) else v) for k, v in record.items()} for record in crimes_raw]
+        # Explicitly clean NaNs before jsonify
+        crimes = clean_nans(crimes_raw)
         
         return jsonify({"crimes": crimes, "count": len(crimes)}), 200
     except Exception as e:

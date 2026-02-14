@@ -11,13 +11,48 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize WOW Factors
     initWOWFactors();
 
-    // Handle Logout
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) logoutBtn.addEventListener('click', logout);
+    // Initialize WOW Factors
+    initWOWFactors();
+
+    // Handle Sidebar Logout
+    const sidebarLogoutBtn = document.getElementById('logout-btn');
+    if (sidebarLogoutBtn) sidebarLogoutBtn.addEventListener('click', logout);
+
+    // Handle Top Bar Logout
+    const topLogoutBtn = document.querySelector('.logout-action');
+    if (topLogoutBtn) topLogoutBtn.addEventListener('click', logout);
+
+    // Handle SOS
+    const sosBtn = document.querySelector('.btn-sos');
+    if (sosBtn) {
+        sosBtn.addEventListener('click', () => {
+            alert('EMERGENCY ALERT TRIGGERED: High Priority Notification Sent to HQ.');
+        });
+    }
+
+    // Handle Theme Toggle
+    const themeBtn = document.querySelector('.theme-toggle');
+    if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+            document.body.classList.toggle('night-watch');
+            // Toggle icon
+            const icon = themeBtn.querySelector('i');
+            if (document.body.classList.contains('night-watch')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+                icon.style.color = '#f59e0b';
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+                icon.style.color = '#fbbf24';
+            }
+        });
+    }
 
     // Initializations
     initSafetyCheck();
 });
+
 
 function initSafetyCheck() {
     const btn = document.getElementById('btn-check-safety');
@@ -57,11 +92,27 @@ function checkAuth() {
     }
 }
 
+function toggleCrimeForm() {
+    const body = document.getElementById('crime-form-body');
+    const icon = document.getElementById('form-toggle-icon');
+
+    if (body.style.display === 'none') {
+        body.style.display = 'block';
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    } else {
+        body.style.display = 'none';
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+    }
+}
+
 function logout() {
     localStorage.removeItem('crime_ai_user');
     localStorage.removeItem('crime_ai_role');
     window.location.href = '/login';
 }
+
 
 function initNavigation() {
     const navLinks = document.querySelectorAll('.nav-menu a');
@@ -100,20 +151,11 @@ function initNavigation() {
         });
     });
 
-    // Handle profile click
-    document.getElementById('sidebar-user-profile').addEventListener('click', () => {
-        const storedRole = localStorage.getItem('crime_ai_role');
-        if (storedRole === 'admin') {
-            document.getElementById('nav-admin').click();
-        }
-    });
-
-    // Update display name and role
+    // Update display name and details
     const storedUser = localStorage.getItem('crime_ai_user');
     const storedRole = localStorage.getItem('crime_ai_role');
 
     if (storedUser) {
-        // Fix: Use 'user-name' to match dashboard.html
         if (document.getElementById('user-name')) {
             document.getElementById('user-name').innerText = storedUser;
         }
@@ -138,19 +180,57 @@ function initNavigation() {
         // Show/Hide Admin Link based on role
         const adminLink = document.getElementById('nav-admin');
         if (adminLink) {
-            if (storedRole === 'admin') {
-                adminLink.style.display = 'flex'; // Show for admin
-            } else {
-                adminLink.style.display = 'none'; // Hide for police
-            }
+            // Force display for now as per user request
+            adminLink.style.display = 'flex';
         }
     }
+
+    // Handle profile click
+    document.getElementById('sidebar-user-profile').addEventListener('click', () => {
+        if (storedRole === 'admin') {
+            document.getElementById('nav-admin').click();
+        }
+    });
 }
 
 function initDashboard() {
     initMap();
     fetchStats();
     initCrimeSubmission();
+    initLiveFeed();
+}
+
+function initLiveFeed() {
+    const feedContent = document.querySelector('.feed-content');
+    if (!feedContent) return;
+
+    const messages = [
+        "⚠️ New Theft reported in Rohini Sector 16",
+        "🚓 Patrol unit dispatched to Connaught Place",
+        "📞 Emergency call received from Dwarka",
+        "✅ Case #4592 marked as resolved",
+        "⚠️ Suspicious activity reported near India Gate",
+        "🌧️ Weather alert: Heavy rain expected in South Delhi",
+        "🚓 PCR Van 12 arriving at scene in Pitampura",
+        "⚠️ Burglary attempt foiled in Lajpat Nagar",
+        "📡 Drone surveillance active in Red Fort area",
+        "👮 Officer Sharma requesting backup at Sector 21"
+    ];
+
+    setInterval(() => {
+        const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+        const time = new Date().toLocaleTimeString();
+
+        // Fade out
+        feedContent.style.opacity = '0';
+
+        setTimeout(() => {
+            feedContent.innerHTML = `<i class="fas fa-exclamation-triangle" style="color: var(--warning); margin-right: 8px;"></i> [${time}] ${randomMsg}`;
+            // Fade in
+            feedContent.style.opacity = '1';
+        }, 500); // Wait for fade out
+
+    }, 5000); // Every 5 seconds
 }
 
 function initCrimeSubmission() {
@@ -200,7 +280,9 @@ async function initMap() {
 
     try {
         const response = await fetch('/api/hotspots');
-        const data = await response.json();
+        const text = await response.text();
+        const safeText = text.replace(/:\s*NaN/g, ': null');
+        const data = JSON.parse(safeText);
 
         if (data.hotspots) {
             data.hotspots.forEach((spot, index) => {
@@ -260,7 +342,11 @@ async function fetchStats() {
     try {
         const response = await fetch('/api/crimes');
         if (!response.ok) throw new Error('API Error');
-        const data = await response.json();
+
+        // Manual fix for NaN values if they slip through
+        const text = await response.text();
+        const safeText = text.replace(/:\s*NaN/g, ': null');
+        const data = JSON.parse(safeText);
 
         if (data && data.crimes) {
             window.allCrimes = data.crimes;
@@ -637,8 +723,51 @@ function initWOWFactors() {
         });
     }
 
+    // Admin Panel Interactions
+    const btnAdminUsers = document.getElementById('btn-admin-users');
+    if (btnAdminUsers) {
+        btnAdminUsers.addEventListener('click', () => {
+            showModal('User Management', '<p>Access to the <strong>User Database</strong> is restricted. <br><br>Please contact the Chief Administrator for elevated privileges.</p>');
+        });
+    }
+
+    const btnAdminSettings = document.getElementById('btn-admin-settings');
+    if (btnAdminSettings) {
+        btnAdminSettings.addEventListener('click', () => {
+            showModal('System Settings', '<p>Configuration panel is locked.<br>System is running in <strong>Production Mode</strong>.</p>');
+        });
+    }
+
     // Start Live Feed
     startLiveFeed();
+}
+
+// Modal Functions
+function showModal(title, htmlContent) {
+    const overlay = document.getElementById('modal-overlay');
+    const titleEl = document.getElementById('modal-title');
+    const bodyEl = document.getElementById('modal-body');
+
+    if (overlay && titleEl && bodyEl) {
+        titleEl.innerText = title;
+        bodyEl.innerHTML = htmlContent;
+        overlay.style.display = 'flex';
+    }
+}
+
+function closeModal() {
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
+
+// Close modal on outside click
+window.onclick = function (event) {
+    const overlay = document.getElementById('modal-overlay');
+    if (event.target == overlay) {
+        closeModal();
+    }
 }
 
 function startLiveFeed() {

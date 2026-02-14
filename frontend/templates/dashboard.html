@@ -186,27 +186,28 @@
 
             <nav class="nav-menu">
                 <a href="#" class="active" id="nav-dashboard">
-                    <i class="fas fa-chart-line"></i> Dashboard
+                    <span class="nav-icon">📊</span> Dashboard
                 </a>
                 <a href="#" id="nav-map">
-                    <i class="fas fa-map"></i> Map View
+                    <span class="nav-icon">🗺️</span> Map View
                 </a>
                 <a href="#" id="nav-trends">
-                    <i class="fas fa-chart-area"></i> Trends
+                    <span class="nav-icon">📈</span> Trends
                 </a>
                 <a href="#" id="nav-predictions">
-                    <i class="fas fa-crystal-ball"></i> Predictions
+                    <span class="nav-icon">🔮</span> Predictions
                 </a>
                 <a href="#" id="nav-reports">
-                    <i class="fas fa-file-contract"></i> Reports
+                    <span class="nav-icon">📄</span> Reports
                 </a>
-                <a href="#" id="nav-admin" style="display: none;">
-                    <i class="fas fa-cog"></i> Administrator
+                <a href="#" id="nav-admin">
+                    <span class="nav-icon">⚙️</span> Administrator
                 </a>
             </nav>
 
             <div class="user-profile" id="sidebar-user-profile" style="cursor: pointer;">
-                <img src="" alt="User" id="user-avatar">
+                <img src="https://ui-avatars.com/api/?name=User&background=334155&color=fff" alt="User"
+                    id="user-avatar">
                 <div class="user-info">
                     <span class="name" id="user-name">Loading...</span>
                     <span class="role" id="user-role">...</span>
@@ -219,91 +220,117 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- Top Bar Actions -->
+            <div class="top-bar">
+                <div class="search-bar">
+                    <input type="text" placeholder="Search by area, crime type...">
+                </div>
+                <div class="actions">
+                    <button class="btn-icon theme-toggle" title="Toggle Dark Mode">
+                        <i class="fas fa-moon" style="color: #fbbf24;"></i>
+                    </button>
+                    <button class="btn btn-sos">
+                        <i class="fas fa-bullhorn"></i> SOS
+                    </button>
+                    <button class="btn btn-print" onclick="window.print()">
+                        Print
+                    </button>
+                    <button class="btn-icon logout-action" title="Logout">
+                        <i class="fas fa-door-open" style="color: #f87171;"></i>
+                    </button>
+                </div>
+            </div>
+
             <!-- Dashboard View -->
             <div id="section-dashboard" class="content-section active">
-                <!-- Crime Entry Form -->
-                <div class="card" style="margin-bottom: 2rem;">
-                    <h3>Add New Crime Record</h3>
-                    <form id="crime-entry-form">
-                        <div class="crime-form-grid">
-                            <div class="form-row">
-                                <div>
-                                    <label style="color: #94a3b8; font-size: 0.9rem;">Crime Type</label>
-                                    <select id="entry-type" class="form-input" style="margin-top: 0.5rem;">
-                                        <option value="THEFT">Theft</option>
-                                        <option value="ROBBERY">Robbery</option>
-                                        <option value="BURGLARY">Burglary</option>
-                                        <option value="ASSAULT">Assault</option>
-                                        <option value="FRAUD">Fraud</option>
-                                        <option value="CYBER CRIME">Cyber Crime</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style="color: #94a3b8; font-size: 0.9rem;">Date & Time</label>
-                                    <input type="datetime-local" id="entry-date" class="form-input"
-                                        style="margin-top: 0.5rem;" required>
-                                </div>
-                            </div>
 
-                            <div class="form-row">
-                                <div>
-                                    <label style="color: #94a3b8; font-size: 0.9rem;">Location Area</label>
-                                    <input type="text" id="entry-location-text" class="form-input"
-                                        placeholder="e.g. Rohini Sector 7, Delhi" style="margin-top: 0.5rem;" required>
-                                </div>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                    <div>
-                                        <label style="color: #94a3b8; font-size: 0.9rem;">Latitude</label>
-                                        <input type="number" step="any" id="entry-lat" class="form-input"
-                                            placeholder="Lat" style="margin-top: 0.5rem;" required>
+                <div class="dashboard-top-section">
+                    <!-- Left: Crime Entry Form -->
+                    <div class="card form-card">
+                        <h3 style="color: #94a3b8; font-size: 1.1rem; margin-bottom: 1.5rem;">Add New Crime Record</h3>
+                        <form id="crime-entry-form">
+                            <div class="crime-form-grid">
+                                <!-- Row 1 -->
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Crime Type</label>
+                                        <select id="entry-type" class="form-input">
+                                            <option value="THEFT">Theft</option>
+                                            <option value="ROBBERY">Robbery</option>
+                                            <option value="BURGLARY">Burglary</option>
+                                            <option value="ASSAULT">Assault</option>
+                                            <option value="FRAUD">Fraud</option>
+                                            <option value="CYBER CRIME">Cyber Crime</option>
+                                        </select>
                                     </div>
-                                    <div>
-                                        <label style="color: #94a3b8; font-size: 0.9rem;">Longitude</label>
-                                        <input type="number" step="any" id="entry-lng" class="form-input"
-                                            placeholder="Lng" style="margin-top: 0.5rem;" required>
+                                    <div class="form-group">
+                                        <label>Date & Time</label>
+                                        <input type="datetime-local" id="entry-date" class="form-input" required>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div>
-                                <label style="color: #94a3b8; font-size: 0.9rem;">Detailed Description</label>
-                                <textarea id="entry-desc" class="form-input" rows="3"
-                                    placeholder="Enter incident details..." style="margin-top: 0.5rem;"></textarea>
-                            </div>
+                                <!-- Row 2 -->
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Location Area</label>
+                                        <input type="text" id="entry-location-text" class="form-input"
+                                            placeholder="e.g. Rohini Sector 7, Delhi" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Coordinates (Lat, Lng)</label>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                            <input type="number" step="any" id="entry-lat" class="form-input"
+                                                placeholder="Latitude" required>
+                                            <input type="number" step="any" id="entry-lng" class="form-input"
+                                                placeholder="Longitude" required>
+                                        </div>
+                                    </div>
+                                </div>
 
-                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Submit
-                                Crime Report</button>
+                                <!-- Row 3 -->
+                                <div class="form-group">
+                                    <label>Detailed Description</label>
+                                    <textarea id="entry-desc" class="form-input" rows="3"
+                                        placeholder="Enter incident details..."></textarea>
+                                </div>
+
+                                <!-- Row 4 -->
+                                <button type="submit" class="btn btn-primary"
+                                    style="width: 100%; margin-top: 1.5rem; background-color: #3b82f6; border: none; padding: 0.8rem; font-weight: 600;">Submit
+                                    Crime Report</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Right: Quick Stats -->
+                    <div class="quick-stats-column">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Officers</div>
+                            <div class="stat-value" id="total-officers">--</div>
+                            <div class="stat-trend trend-up">
+                                <i class="fas fa-arrow-up"></i> 3 new today
+                            </div>
                         </div>
-                    </form>
+
+                        <div class="stat-card">
+                            <div class="stat-label">Crime Records</div>
+                            <div class="stat-value" id="crime-records-count">--</div>
+                            <div class="stat-trend trend-down">
+                                <i class="fas fa-arrow-down"></i> 5% this week
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-label">Open Cases</div>
+                            <div class="stat-value" id="open-cases-count">--</div>
+                            <div class="stat-trend trend-warn">
+                                Currently investigating
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="dashboard-grid">
-
-                    <!-- Top Stats -->
-                    <!-- Top Stats -->
-                    <div class="stat-card">
-                        <div class="stat-label">Total Officers</div>
-                        <div class="stat-value" id="total-officers">--</div>
-                        <div class="stat-trend trend-up">
-                            <i class="fas fa-arrow-up"></i> 3 new today
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-label">Crime Records</div>
-                        <div class="stat-value" id="crime-records-count">--</div>
-                        <div class="stat-trend trend-down">
-                            <i class="fas fa-arrow-down"></i> 5% this week
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-label">Open Cases</div>
-                        <div class="stat-value" id="open-cases-count">--</div>
-                        <div class="stat-trend trend-warn">
-                            Currently investigating
-                        </div>
-                    </div>
 
                     <!-- Middle Row: Hotspots, Map, Dist -->
                     <div class="card card-hotspot">
@@ -413,17 +440,32 @@
                     <div class="card">
                         <h3>User Management</h3>
                         <p>Manage officer accounts and permissions.</p>
-                        <button class="btn btn-primary" style="margin-top: 1rem;">Manage Users</button>
+                        <button class="btn btn-primary" id="btn-admin-users" style="margin-top: 1rem;">Manage
+                            Users</button>
                     </div>
                     <div class="card">
                         <h3>System Settings</h3>
                         <p>Configure prediction models and data sources.</p>
-                        <button class="btn btn-primary" style="margin-top: 1rem;">Settings</button>
+                        <button class="btn btn-primary" id="btn-admin-settings"
+                            style="margin-top: 1rem;">Settings</button>
                     </div>
                 </div>
             </div>
 
         </main>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title" style="margin: 0; color: white;">Modal Title</h3>
+                <button class="btn-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <p>Modal Content</p>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
