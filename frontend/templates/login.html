@@ -407,8 +407,12 @@
                 localStorage.setItem('crime_ai_role', role);
                 localStorage.setItem('crime_ai_auth', 'true');
 
-                // Redirect to Dashboard via Flask route
-                window.location.href = '/dashboard';
+                // Redirect based on role
+                if (role === 'admin') {
+                    window.location.href = '/admin_dashboard';
+                } else {
+                    window.location.href = '/dashboard';
+                }
 
             }, 1500);
         }

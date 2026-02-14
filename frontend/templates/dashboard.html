@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - CrimeAI</title>
+    <title>Dashboard - Crimlytics AI</title>
     <!-- Fonts -->
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@500;700&display=swap"
@@ -180,8 +180,8 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="logo">
-                <div class="logo-icon"><i class="fas fa-shield-alt" style="color: var(--primary);"></i></div>
-                <h1>CrimeAI</h1>
+                <div class="logo-icon"><i class="fas fa-robot" style="color: var(--primary);"></i></div>
+                <h1>Crimlytics AI</h1>
             </div>
 
             <nav class="nav-menu">
@@ -202,6 +202,9 @@
                 </a>
                 <a href="#" id="nav-admin">
                     <span class="nav-icon">⚙️</span> Administrator
+                </a>
+                <a href="#" id="nav-settings">
+                    <span class="nav-icon">🔒</span> Settings
                 </a>
             </nav>
 
@@ -448,6 +451,33 @@
                         <p>Configure prediction models and data sources.</p>
                         <button class="btn btn-primary" id="btn-admin-settings"
                             style="margin-top: 1rem;">Settings</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-settings" class="content-section">
+                <h2>Account Settings</h2>
+                <div class="dashboard-grid" style="grid-template-columns: 1fr; max-width: 600px; margin-top: 1rem;">
+                    <div class="card">
+                        <h3>Change Password</h3>
+                        <form id="password-change-form">
+                            <div class="form-group">
+                                <label style="display:block; margin-bottom:0.5rem; color:#94a3b8;">Current
+                                    Password</label>
+                                <input type="password" id="current-password" class="form-input" required>
+                            </div>
+                            <div class="form-group" style="margin-top:1rem;">
+                                <label style="display:block; margin-bottom:0.5rem; color:#94a3b8;">New Password</label>
+                                <input type="password" id="new-password" class="form-input" required>
+                            </div>
+                            <div class="form-group" style="margin-top:1rem;">
+                                <label style="display:block; margin-bottom:0.5rem; color:#94a3b8;">Confirm New
+                                    Password</label>
+                                <input type="password" id="confirm-password" class="form-input" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary"
+                                style="margin-top: 1.5rem; width: 100%;">Update Password</button>
+                        </form>
                     </div>
                 </div>
             </div>

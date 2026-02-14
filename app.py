@@ -45,6 +45,10 @@ def login_page():
 def dashboard_page():
     return render_template('dashboard.html')
 
+@app.route('/admin_dashboard')
+def admin_dashboard_page():
+    return render_template('admin_dashboard.html')
+
 @app.route('/register')
 def register_page():
     return render_template('register.html')
@@ -99,6 +103,39 @@ def api_login():
     if password in ['admin', '1234']:
         return jsonify({"status": "success", "username": username, "role": "OFFICER"}), 200
     return jsonify({"status": "error", "message": "Invalid password"}), 401
+
+@app.route('/api/auth/password/update', methods=['POST'])
+def update_password():
+    data = request.json
+    username = data.get('username')
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+    
+    if not all([username, current_password, new_password]):
+        return jsonify({"status": "error", "message": "Missing fields"}), 400
+        
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({"error": "Database connection failed"}), 500
+        
+    try:
+        cursor = connection.cursor()
+        # Verify current password
+        cursor.execute("SELECT id FROM users WHERE username = ? AND password_hash = ?", (username, current_password))
+        user = cursor.fetchone()
+        
+        if not user:
+            return jsonify({"status": "error", "message": "Invalid current password"}), 401
+            
+        # Update password
+        cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_password, user['id']))
+        connection.commit()
+        
+        return jsonify({"status": "success", "message": "Password updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        connection.close()
 
 @app.route('/api/crimes/submit', methods=['POST'])
 def submit_crime():
@@ -226,6 +263,136 @@ def reset_database():
         return jsonify({"status": "success", "message": "Database reset and re-seeded with 200 records."}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/analysis', methods=['GET'])
+def admin_analysis():
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        # 1. Get total crime count & open cases
+        cursor = connection.cursor()
+        cursor.execute("SELECT COUNT(*) FROM crimes")
+        total_crimes = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM crimes WHERE arrested = 0")
+        open_cases = cursor.fetchone()[0]
+
+        # 2. Identify Hotspot (Most frequent location description in last 50 recs)
+        # We use a simple frequency check on 'location_description' or 'crime_type'
+        query = """
+            SELECT location_description, COUNT(*) as count 
+            FROM crimes 
+            GROUP BY location_description 
+            ORDER BY count DESC 
+            LIMIT 1
+        """
+        cursor.execute(query)
+        hotspot_row = cursor.fetchone()
+        
+        if hotspot_row:
+            location = hotspot_row[0]
+            count = hotspot_row[1]
+            analysis_text = f"Hotspot detected near {location} with {count} reported cases."
+            analysis_type = "Critical" if count > 5 else "Moderate"
+        else:
+            analysis_text = "No sufficient data to identify hotspots yet."
+            analysis_type = "Low"
+
+        return jsonify({
+            "total_crimes": total_crimes,
+            "open_cases": open_cases,
+            "hotspot_count": 1 if hotspot_row else 0, # Simplified for now
+            "latest_analysis": {
+                "text": analysis_text,
+                "type": analysis_type
+            }
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        connection.close()
+
+@app.route('/api/admin/detailed-analysis', methods=['GET'])
+def admin_detailed_analysis():
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cursor = connection.cursor()
+        
+        # 1. High Priority Hotspots (Top 5 Areas by Crime Count)
+        cursor.execute("SELECT location_description, COUNT(*) as count FROM crimes GROUP BY location_description ORDER BY count DESC LIMIT 5")
+        hotspots = [{"area": row[0], "count": row[1]} for row in cursor.fetchall()]
+
+        # 2. Crime Type Distribution
+        cursor.execute("SELECT crime_type, COUNT(*) as count FROM crimes GROUP BY crime_type")
+        type_data = [{"type": row[0], "count": row[1]} for row in cursor.fetchall()]
+        total_crimes = sum(item['count'] for item in type_data)
+        type_distribution = []
+        if total_crimes > 0:
+            type_distribution = [{"type": item['type'], "percentage": round((item['count'] / total_crimes) * 100)} for item in type_data]
+            type_distribution.sort(key=lambda x: x['percentage'], reverse=True)
+
+        # 3. Time Patterns
+        cursor.execute("SELECT strftime('%H', occurrence_date), COUNT(*) FROM crimes GROUP BY strftime('%H', occurrence_date)")
+        time_raw = cursor.fetchall()
+        
+        time_counts = {'Morning (4AM-12PM)': 0, 'Afternoon (12PM-6PM)': 0, 'Evening (6PM-11PM)': 0, 'Night (11PM-4AM)': 0}
+        for hour_str, count in time_raw:
+            if hour_str:
+                h = int(hour_str)
+                if 4 <= h < 12: time_counts['Morning (4AM-12PM)'] += count
+                elif 12 <= h < 18: time_counts['Afternoon (12PM-6PM)'] += count
+                elif 18 <= h < 23: time_counts['Evening (6PM-11PM)'] += count
+                else: time_counts['Night (11PM-4AM)'] += count
+        
+        time_patterns = []
+        if total_crimes > 0:
+            for k, v in time_counts.items():
+                time_patterns.append({"time": k, "percentage": round((v / total_crimes) * 100)})
+            time_patterns.sort(key=lambda x: x['percentage'], reverse=True)
+
+        # 4. AI Insights
+        insights = []
+        if type_distribution:
+            top_crime = type_distribution[0]
+            insights.append({
+                "title": f"{top_crime['type'].title()} Pattern Detected",
+                "icon": "fa-lightbulb",
+                "color_class": "text-yellow-500", 
+                "text": f"High concentration of {top_crime['type'].lower()} ({top_crime['percentage']}%) detected."
+            })
+        
+        if time_patterns:
+            peak = time_patterns[0]
+            insights.append({
+                "title": "Peak Activity Time",
+                "icon": "fa-clock",
+                "color_class": "text-cyan-500",
+                "text": f"Crime reporting peaks during {peak['time'].split('(')[0].lower()} ({peak['percentage']}%)."
+            })
+
+        if hotspots:
+            top = hotspots[0]
+            insights.append({
+                "title": "Emerging Hotspot",
+                "icon": "fa-map-marker-alt",
+                "color_class": "text-red-500",
+                "text": f"{top['area']} shows high incident frequency ({top['count']} cases)."
+            })
+
+        return jsonify({
+            "hotspots": hotspots,
+            "type_distribution": type_distribution,
+            "time_patterns": time_patterns,
+            "insights": insights
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        connection.close()
 
 @app.route('/api/predict/safety', methods=['GET'])
 def predict_safety():

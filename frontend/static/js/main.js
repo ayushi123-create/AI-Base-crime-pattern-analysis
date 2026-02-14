@@ -11,8 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize WOW Factors
     initWOWFactors();
 
-    // Initialize WOW Factors
-    initWOWFactors();
+    // Initialize Admin Actions
+    initAdminActions();
 
     // Handle Sidebar Logout
     const sidebarLogoutBtn = document.getElementById('logout-btn');
@@ -198,6 +198,49 @@ function initDashboard() {
     fetchStats();
     initCrimeSubmission();
     initLiveFeed();
+    initSettings();
+}
+
+function initSettings() {
+    const form = document.getElementById('password-change-form');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const currentPassword = document.getElementById('current-password').value;
+        const newPassword = document.getElementById('new-password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        const username = localStorage.getItem('crime_ai_user');
+
+        if (newPassword !== confirmPassword) {
+            alert('New passwords do not match');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/auth/password/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: username,
+                    current_password: currentPassword,
+                    new_password: newPassword
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                alert('Password updated successfully');
+                form.reset();
+            } else {
+                alert(data.message || 'Update failed');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Request failed');
+        }
+    });
 }
 
 function initLiveFeed() {
@@ -528,18 +571,15 @@ function updateTypeChart(labels, values) {
 // Admin & Reporting Logic
 function initAdminActions() {
     const btnGenerateReport = document.getElementById('btn-generate-report');
-    const btnManageUsers = document.getElementById('btn-manage-users');
-    const btnDBSettings = document.getElementById('btn-db-settings');
+    const btnManageUsers = document.getElementById('btn-admin-users');
+    const btnDBSettings = document.getElementById('btn-admin-settings');
 
     if (btnGenerateReport) btnGenerateReport.addEventListener('click', generateReport);
     if (btnManageUsers) btnManageUsers.addEventListener('click', showManageUsers);
     if (btnDBSettings) btnDBSettings.addEventListener('click', showDBSettings);
 }
 
-function closeModal() {
-    const modal = document.getElementById('admin-modal');
-    if (modal) modal.style.display = 'none';
-}
+
 
 function generateReport() {
     // Basic printable summary
@@ -590,7 +630,7 @@ function generateReport() {
 }
 
 async function showManageUsers() {
-    const modal = document.getElementById('admin-modal');
+    const modal = document.getElementById('modal-overlay');
     const title = document.getElementById('modal-title');
     const body = document.getElementById('modal-body');
 
@@ -643,7 +683,7 @@ async function handleDeleteUser(id) {
 }
 
 function showDBSettings() {
-    const modal = document.getElementById('admin-modal');
+    const modal = document.getElementById('modal-overlay');
     const title = document.getElementById('modal-title');
     const body = document.getElementById('modal-body');
 
@@ -723,20 +763,24 @@ function initWOWFactors() {
         });
     }
 
-    // Admin Panel Interactions
+    // Admin Panel Interactions - UNLOCKED
+    /* 
+    The following restriction mocks are disabled to allow full admin access.
+    
     const btnAdminUsers = document.getElementById('btn-admin-users');
     if (btnAdminUsers) {
         btnAdminUsers.addEventListener('click', () => {
             showModal('User Management', '<p>Access to the <strong>User Database</strong> is restricted. <br><br>Please contact the Chief Administrator for elevated privileges.</p>');
         });
     }
-
+ 
     const btnAdminSettings = document.getElementById('btn-admin-settings');
     if (btnAdminSettings) {
         btnAdminSettings.addEventListener('click', () => {
             showModal('System Settings', '<p>Configuration panel is locked.<br>System is running in <strong>Production Mode</strong>.</p>');
         });
     }
+    */
 
     // Start Live Feed
     startLiveFeed();
