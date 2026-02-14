@@ -152,23 +152,33 @@ function initNavigation() {
     });
 
     // Update display name and details
-    const storedUser = localStorage.getItem('crime_ai_user');
+    const storedUserStr = localStorage.getItem('crime_ai_user');
     const storedRole = localStorage.getItem('crime_ai_role');
 
-    if (storedUser) {
+    if (storedUserStr) {
+        let userName = storedUserStr;
+        try {
+            const userObj = JSON.parse(storedUserStr);
+            if (userObj.full_name) userName = userObj.full_name;
+            else if (userObj.username) userName = userObj.username;
+        } catch (e) {
+            // Legacy/Simple string case
+            console.log('User stored as string');
+        }
+
         if (document.getElementById('user-name')) {
-            document.getElementById('user-name').innerText = storedUser;
+            document.getElementById('user-name').innerText = userName;
         }
 
         // Also update Admin panel header if present
         if (document.getElementById('admin-name-span')) {
-            document.getElementById('admin-name-span').innerText = storedUser;
+            document.getElementById('admin-name-span').innerText = userName;
         }
 
         // Set Avatar using UI Avatars
         const avatar = document.getElementById('user-avatar');
         if (avatar) {
-            avatar.src = `https://ui-avatars.com/api/?name=${storedUser}&background=3b82f6&color=fff`;
+            avatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=3b82f6&color=fff`;
         }
 
         // Update Role Display
@@ -186,11 +196,14 @@ function initNavigation() {
     }
 
     // Handle profile click
-    document.getElementById('sidebar-user-profile').addEventListener('click', () => {
-        if (storedRole === 'admin') {
-            document.getElementById('nav-admin').click();
-        }
-    });
+    const profileBtn = document.getElementById('sidebar-user-profile');
+    if (profileBtn) {
+        profileBtn.addEventListener('click', () => {
+            if (storedRole === 'admin') {
+                document.getElementById('nav-admin').click();
+            }
+        });
+    }
 }
 
 function initDashboard() {
@@ -211,7 +224,17 @@ function initSettings() {
         const currentPassword = document.getElementById('current-password').value;
         const newPassword = document.getElementById('new-password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
-        const username = localStorage.getItem('crime_ai_user');
+
+        let userId = null;
+        try {
+            const userObj = JSON.parse(localStorage.getItem('crime_ai_user'));
+            userId = userObj.user_id;
+        } catch (e) { console.error('Error parsing user', e); }
+
+        if (!userId) {
+            alert('User session invalid. Please login again.');
+            return;
+        }
 
         if (newPassword !== confirmPassword) {
             alert('New passwords do not match');
@@ -223,7 +246,7 @@ function initSettings() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    username: username,
+                    user_id: userId,
                     current_password: currentPassword,
                     new_password: newPassword
                 })

@@ -56,39 +56,32 @@ def register_page():
 @app.route('/api/auth/register', methods=['POST'])
 def api_register():
     data = request.json
+    full_name = data.get('full_name')
+    email = data.get('email')
+    password = data.get('password')
+    role = data.get('role', 'officer')
+    phone = data.get('phone')
+    station = data.get('station')
+    badge_number = data.get('badge')
+
+    # Basic validation
+    if not all([full_name, email, password, role]):
+        return jsonify({"status": "error", "message": "Missing required fields"}), 400
+
     connection = get_db_connection()
     if not connection:
         return jsonify({"error": "Database connection failed"}), 500
-    
+
     try:
         cursor = connection.cursor()
-        
-        # Check if username or email already exists
-        cursor.execute("SELECT id FROM users WHERE username = ? OR email = ?", 
-                      (data.get('username'), data.get('email')))
-        if cursor.fetchone():
-            return jsonify({"status": "error", "message": "Username or email already exists"}), 400
-        
-        # Insert new user (storing plain password for demo - in production use hashing!)
-        query = """
-        INSERT INTO users (username, password_hash, email, role, created_at)
-        VALUES (?, ?, ?, ?, datetime('now'))
-        """
-        role = data.get('role', 'police').upper()
-        if role == 'POLICE':
-            role = 'VIEWER'  # Map police to VIEWER role
-        elif role == 'ADMIN':
-            role = 'ADMIN'
-        
-        cursor.execute(query, (
-            data.get('username'),
-            data.get('password'),  # In production, hash this!
-            data.get('email'),
-            role
-        ))
+        cursor.execute(
+            "INSERT INTO users (full_name, email, password, role, phone, station, badge_number) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (full_name, email, password, role, phone, station, badge_number)
+        )
         connection.commit()
-        
-        return jsonify({"status": "success", "message": "Registration successful"}), 201
+        return jsonify({"status": "success", "message": "User registered successfully"}), 201
+    except sqlite3.IntegrityError:
+        return jsonify({"status": "error", "message": "Email already exists"}), 409
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
@@ -97,21 +90,47 @@ def api_register():
 @app.route('/api/auth/login', methods=['POST'])
 def api_login():
     data = request.json
-    username = data.get('username')
+    identifier = data.get('email') # Frontend sends 'email' key even if it's username
     password = data.get('password')
-    # Basic logic for demo - can be extended with DB check
-    if password in ['admin', '1234']:
-        return jsonify({"status": "success", "username": username, "role": "OFFICER"}), 200
-    return jsonify({"status": "error", "message": "Invalid password"}), 401
+
+    if not all([identifier, password]):
+        return jsonify({"status": "error", "message": "Missing credentials"}), 400
+
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({"error": "Database connection failed"}), 500
+
+    try:
+        cursor = connection.cursor()
+        # Check against both email and username
+        cursor.execute("SELECT * FROM users WHERE (email = ? OR username = ?) AND password = ?", (identifier, identifier, password))
+        user = cursor.fetchone()
+
+        if user:
+            return jsonify({
+                "status": "success",
+                "user": {
+                    "user_id": user['user_id'],
+                    "full_name": user['full_name'],
+                    "role": user['role']
+                }
+            }), 200
+        else:
+            return jsonify({"status": "error", "message": "Invalid email or password"}), 401
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        connection.close()
 
 @app.route('/api/auth/password/update', methods=['POST'])
 def update_password():
     data = request.json
-    username = data.get('username')
+    user_id = data.get('user_id')
+    email = data.get('email') # Fallback
     current_password = data.get('current_password')
     new_password = data.get('new_password')
     
-    if not all([username, current_password, new_password]):
+    if not (user_id or email) or not current_password or not new_password:
         return jsonify({"status": "error", "message": "Missing fields"}), 400
         
     connection = get_db_connection()
@@ -120,15 +139,20 @@ def update_password():
         
     try:
         cursor = connection.cursor()
+        
         # Verify current password
-        cursor.execute("SELECT id FROM users WHERE username = ? AND password_hash = ?", (username, current_password))
+        if user_id:
+             cursor.execute("SELECT user_id FROM users WHERE user_id = ? AND password = ?", (user_id, current_password))
+        else:
+             cursor.execute("SELECT user_id FROM users WHERE email = ? AND password = ?", (email, current_password))
+
         user = cursor.fetchone()
         
         if not user:
             return jsonify({"status": "error", "message": "Invalid current password"}), 401
             
         # Update password
-        cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_password, user['id']))
+        cursor.execute("UPDATE users SET password = ? WHERE user_id = ?", (new_password, user['user_id']))
         connection.commit()
         
         return jsonify({"status": "success", "message": "Password updated successfully"}), 200
@@ -136,6 +160,7 @@ def update_password():
         return jsonify({"error": str(e)}), 500
     finally:
         connection.close()
+
 
 @app.route('/api/crimes/submit', methods=['POST'])
 def submit_crime():
@@ -256,11 +281,27 @@ def reset_database():
         from backend.app.services.database import init_db
         from scripts.load_data import generate_sample_data, insert_to_mysql
         
+        # 1. Initialize Schema
         init_db()
+
+        # 2. Seed Users
+        connection = get_db_connection()
+        if connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                INSERT INTO users (username, full_name, email, password, role, station, badge_number)
+                VALUES 
+                ('admin', 'System Administrator', 'admin@police.gov', 'admin123', 'admin', 'Headquarters', 'ADM-001'),
+                ('officer', 'Officer Sharma', 'officer@police.gov', 'police123', 'officer', 'Rohini Sector 16', 'POL-102')
+            """)
+            connection.commit()
+            connection.close()
+
+        # 3. Seed Crimes
         sample_data = generate_sample_data(200)
         insert_to_mysql(sample_data)
         
-        return jsonify({"status": "success", "message": "Database reset and re-seeded with 200 records."}), 200
+        return jsonify({"status": "success", "message": "Database reset and re-seeded with Users & 200 Crimes."}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

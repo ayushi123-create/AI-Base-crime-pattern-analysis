@@ -531,6 +531,36 @@
     </div>
 
     <script>
+        // Auth Check & User Display
+        (function () {
+            const userStr = localStorage.getItem('crime_ai_user');
+            const role = localStorage.getItem('crime_ai_role');
+
+            if (!userStr || role !== 'admin') {
+                window.location.href = '/login'; // Redirect unauthorized users
+                return;
+            }
+
+            // Display User Name
+            try {
+                const userObj = JSON.parse(userStr);
+                const name = userObj.full_name || userObj.username || 'Admin';
+
+                // Update header greeting if present
+                const header = document.querySelector('.admin-header h1');
+                if (header) {
+                    // Keep existing text but append name if not already there, acting simple for now
+                    // or create a span for name
+                    // header.innerHTML += ` <span style="font-size: 0.6em; color: #94a3b8;">(${name})</span>`;
+                }
+
+                // Update profile name in sidebar if present
+                const profileName = document.querySelector('.sidebar .profile-name');
+                if (profileName) profileName.innerText = name;
+
+            } catch (e) { console.error('Error parsing user', e); }
+        })();
+
         // Navigation Logic
         function showSection(sectionId, linkElement) {
             // Hide all sections

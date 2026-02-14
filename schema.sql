@@ -19,10 +19,14 @@ CREATE TABLE IF NOT EXISTS crimes (
 );
 
 CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username VARCHAR(50) UNIQUE,
+    full_name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    role ENUM('ADMIN', 'ANALYST', 'VIEWER') DEFAULT 'VIEWER',
+    phone VARCHAR(15),
+    password VARCHAR(255) NOT NULL,
+    role TEXT NOT NULL CHECK(role IN ('admin', 'officer')),
+    station VARCHAR(100),
+    badge_number VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
